@@ -93,7 +93,17 @@ have_gmtoff = cc.has_member('struct tm', 'tm_gmtoff',
                             prefix: '#include <time.h>')
 have_timezone = cc.has_header_symbol('time.h', 'timezone',
                                      args: '-D_XOPEN_SOURCE=700')
-
+have_strerror_r = cc.has_function('strerror_r')
+have_strerror_r_char_p = cc.compiles('''#define _GNU_SOURCE
+                    #include <string.h>
+                    int func (void) {
+                      char error_string[256];
+                      char *ptr = strerror_r (-2, error_string, 256);
+                      char c = *strerror_r (-2, error_string, 256);
+                      return c != 0 && ptr != (void*) 0L;
+                    }
+                 ''',
+                 name : 'strerror_r() returns char *')
 
 
 ################################################################################
@@ -131,8 +141,8 @@ conf.set('HAVE_GETHOSTNAME', 1, description : 'POSIX.1-2001, POSIX.1-2008.')
 conf.set('HAVE_GETTIMEOFDAY', true, description : 'POSIX.1-2001, obsolete POSIX.1-2008.')
 conf.set('HAVE_LIBCRYPTO', ssldep.found().to_int())
 conf.set('HAVE_LWRES_NETDB_H', lwresdep.found().to_int())
-conf.set10('HAVE_STRERROR_R', not gnu_source)
-conf.set10('HAVE_GNU_STRERROR_R', gnu_source)
+conf.set10('HAVE_STRERROR_R', have_strerror_r and not have_strerror_r_char_p)
+conf.set10('HAVE_GNU_STRERROR_R', have_strerror_r_char_p)
 conf.set('HAVE_UNAME', 1)
 
 conf.set10('HAVE_LOCALTIME_R', have_localtime_r)
