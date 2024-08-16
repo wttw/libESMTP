@@ -15,6 +15,11 @@ else
   ]
 endif
 
+if static_auths.contains('crammd5')
+    foreach source : sasl_crammd5_sources
+        sources += 'crammd5' / source
+    endforeach
+else
 sasl_crammd5 = shared_module('crammd5', sasl_crammd5_sources,
 			     name_prefix : 'sasl-',
 			     dependencies : crammd5_deps,
@@ -22,3 +27,4 @@ sasl_crammd5 = shared_module('crammd5', sasl_crammd5_sources,
 			     install : true,
 			     install_dir: auth_plugin_dir)
 clients += sasl_crammd5
+endif

@@ -120,6 +120,24 @@ elif xopen_source
 else
     conf.set('_POSIX_C_SOURCE', '200809L')
 endif
+
+static_auths = get_option('staticauth')
+if static_auths.contains('all')
+    static_auths = ['login', 'plain', 'crammd5']
+    if ntlmdep.found()
+        static_auths += 'ntlm'
+    endif
+endif
+
+if static_auths.contains('ntlm') and not ntlmdeps.found()
+    error('NTLM depencies not found, cannot embed NTLM authentication statically')
+endif
+
+foreach auth : static_auths
+  conf.set('STATIC_AUTH_' + auth.to_upper(), 1)
+endforeach
+
+
 conf.set('SIZEOF_UNSIGNED_INT', cc.sizeof('unsigned int'))
 conf.set('SIZEOF_UNSIGNED_LONG', cc.sizeof('unsigned long'))
 conf.set('SIZEOF_UNSIGNED_SHORT', cc.sizeof('unsigned short'))
@@ -236,6 +254,26 @@ if ssldep.found()
   sources += [ 'tlsutils.h', 'tlsutils.c' ]
 endif
 
+################################################################################
+# SASL client modules
+################################################################################
+clients = []
+include_dir = include_directories('.')
+subdir('login')
+subdir('plain')
+subdir('crammd5')
+if ntlmdep.found()
+    if cc.has_header('openssl/md4.h') and cc.has_function('MD4_Init', dependencies : ntlmdep)
+        subdir('ntlm')
+    else
+        error('MD4 is not supported in current openssl, unable to build NTLM plugin')
+    endif
+endif
+
+################################################################################
+# Main library
+################################################################################
+
 gnu_map_file = 'libesmtp.map'
 darwin_map_file = 'libesmtp.darwin.map'
 
@@ -258,22 +296,6 @@ lib = library('esmtp', sources,
 	      version : libesmtp_so_version,
 	      dependencies : deps,
 	      install : true)
-
-################################################################################
-# SASL client modules
-################################################################################
-clients = []
-include_dir = include_directories('.')
-subdir('login')
-subdir('plain')
-subdir('crammd5')
-if ntlmdep.found()
-  if cc.has_header('openssl/md4.h') and cc.has_function('MD4_Init', dependencies : ntlmdep)
-    subdir('ntlm')
-  else
-    error('MD4 is not supported in current openssl, unable to build NTLM plugin')
-  endif
-endif
 
 ################################################################################
 # libESMTP example/demo program
