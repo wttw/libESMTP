@@ -54,10 +54,12 @@ hmac_md5_pre (const void *secret, size_t secret_len,
   if (secret_len > PAD_SIZE)
     {
       MD5_CTX tctx;
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       MD5_Init (&tctx);
       MD5_Update (&tctx, secret, secret_len);
       MD5_Final (tk, &tctx);
+#pragma GCC diagnostic pop
       secret = tk;
       secret_len = sizeof tk;
     }
@@ -76,7 +78,8 @@ hmac_md5_pre (const void *secret, size_t secret_len,
       ipad[i] ^= 0x36;
       opad[i] ^= 0x5c;
     }
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   /* perform inner MD5 */
   MD5_Init (inner);
   MD5_Update (inner, ipad, sizeof ipad);
@@ -84,6 +87,7 @@ hmac_md5_pre (const void *secret, size_t secret_len,
   /* perform outer MD5 */
   MD5_Init (outer);
   MD5_Update (outer, opad, sizeof opad);
+#pragma GCC diagnostic pop
 }
 
 /* Finalise HMAC-MD5 contexts from a challenge
@@ -93,7 +97,8 @@ hmac_md5_post (const void *challenge, size_t challenge_len,
                MD5_CTX *inner, MD5_CTX *outer, unsigned char digest[16])
 {
   unsigned char id[16];
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   /* perform inner MD5 */
   MD5_Update (inner, challenge, challenge_len);
   MD5_Final (id, inner);
@@ -101,6 +106,7 @@ hmac_md5_post (const void *challenge, size_t challenge_len,
   /* perform outer MD5 */
   MD5_Update (outer, id, sizeof id);
   MD5_Final (digest, outer);
+#pragma GCC diagnostic pop
 }
 
 /* Digest a challenge and a secret.
