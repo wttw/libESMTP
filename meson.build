@@ -93,7 +93,15 @@ have_gmtoff = cc.has_member('struct tm', 'tm_gmtoff',
                             prefix: '#include <time.h>')
 have_timezone = cc.has_header_symbol('time.h', 'timezone',
                                      args: '-D_XOPEN_SOURCE=700')
-have_strerror_r_char_p = not cc.compiles('#include <string.h>\nint strerror_r(int,char*,size_t);int main(){}')
+gnu_source = have_memrchr or have_gmtoff
+xopen_source = have_timezone
+if gnu_source
+have_strerror_r_char_p = not cc.compiles('#include <string.h>\nint strerror_r(int,char*,size_t);int main(){}', args: '-D_GNU_SOURCE')
+elif xopen_source
+    have_strerror_r_char_p = not cc.compiles('#include <string.h>\nint strerror_r(int,char*,size_t);int main(){}', args: '-D_XOPEN_SOURCE=700')
+else
+    have_strerror_r_char_p = not cc.compiles('#include <string.h>\nint strerror_r(int,char*,size_t);int main(){}', args: '-D_POSIX_C_SOURCE=200809L')
+endif
 have_strerror_r = cc.has_function('strerror_r')
 
 ################################################################################
@@ -101,8 +109,7 @@ have_strerror_r = cc.has_function('strerror_r')
 # XXX WARNING use of #if SYMBOL vs #ifdef SYMBOL somewhat haphazard
 ################################################################################
 conf = configuration_data()
-gnu_source = have_memrchr or have_gmtoff
-xopen_source = have_timezone
+
 if gnu_source
     conf.set('_GNU_SOURCE', true)
 elif xopen_source
